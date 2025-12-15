@@ -5,11 +5,11 @@ import uuid
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, name, password=None, **extra_fields):
+    def create_user(self, email, name, password=None, username=None, **extra_fields):
         if not email:
             raise ValueError('Email majburiy maydon')
         email = self.normalize_email(email)
-        user = self.model(email=email, name=name, **extra_fields)
+        user = self.model(email=email, name=name, username=username, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -22,6 +22,7 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    username = models.CharField(max_length=50, unique=True, db_index=True)  # YANGI
     email = models.EmailField(unique=True, max_length=255, db_index=True)
     name = models.CharField(max_length=150)
     is_active = models.BooleanField(default=True)
@@ -32,7 +33,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
     
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['name']
+    REQUIRED_FIELDS = ['name', 'username']  # username qo'shildi
     
     class Meta:
         db_table = 'users'

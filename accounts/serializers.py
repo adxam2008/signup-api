@@ -26,13 +26,12 @@ class SignupRequestSerializer(serializers.Serializer):
     )
     
     password = serializers.CharField(
-        required=True,
+        required=False,
         min_length=8,
         max_length=128,
         write_only=True,
         style={'input_type': 'password'},
         error_messages={
-            'required': 'Parol majburiy maydon',
             'blank': 'Parol bo\'sh bo\'lmasligi kerak',
             'min_length': 'Parol kamida 8 belgidan iborat bo\'lishi kerak',
             'max_length': 'Parol 128 belgidan oshmasligi kerak'
@@ -43,6 +42,8 @@ class SignupRequestSerializer(serializers.Serializer):
 class SignupResponseSerializer(serializers.Serializer):
     user_id = serializers.UUIDField(read_only=True)
     email = serializers.EmailField(read_only=True)
+    login = serializers.CharField(read_only=True)
+    password = serializers.CharField(read_only=True)
     success = serializers.BooleanField(read_only=True, default=True)
 
 

@@ -4,8 +4,36 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .repositories import UserRepository
 from .validators import SignupValidator
 import logging
+import random
+import string
 
 logger = logging.getLogger(__name__)
+
+
+def generate_username(name):
+    """
+    Ism asosida unique username yaratish
+    Masalan: "Adxam Salimov" -> "adxam7234"
+    """
+    first_name = name.split()[0].lower()
+    clean_name = ''.join(filter(str.isalpha, first_name))
+    random_numbers = ''.join(random.choices(string.digits, k=4))
+    username = clean_name + random_numbers
+    return username
+
+
+def generate_password(length=10):
+    """
+    Kuchli random parol yaratish
+    Masalan: "aS20081501"
+    """
+    password = []
+    password.append(random.choice(string.ascii_uppercase))
+    password.append(random.choice(string.ascii_lowercase))
+    remaining = length - 2
+    password.extend(random.choices(string.ascii_letters + string.digits, k=remaining))
+    random.shuffle(password)
+    return ''.join(password)
 
 
 class SignupService:
@@ -13,7 +41,24 @@ class SignupService:
         self.repository = UserRepository()
         self.validator = SignupValidator()
     
-    def register_user(self, name, email, password):
+    def register_user(self, name, email, password=None):
+        """
+        User ro'yxatdan o'tkazish
+        Agar password berilmasa, avtomatik yaratiladi
+        """
+        # Username yaratish
+        username = generate_username(name)
+        
+        # Agar username mavjud bo'lsa, yangi yaratish
+        while self.repository.username_exists(username):
+            username = generate_username(name)
+        
+        # Agar parol berilmasa, avtomatik yaratish
+        if not password:
+            password = generate_password()
+        
+        generated_password = password  # Response uchun saqlash
+        
         self._validate_input(name, email, password)
         
         if self.repository.email_exists(email):
@@ -24,14 +69,17 @@ class SignupService:
             user = self.repository.create_user(
                 name=name,
                 email=email,
-                password=password
+                password=password,
+                username=username
             )
             
-            logger.info(f"Yangi user yaratildi: {user.email}")
+            logger.info(f"Yangi user yaratildi: {user.email}, login: {username}")
             
             return {
                 'user_id': user.user_id,
                 'email': user.email,
+                'login': username,
+                'password': generated_password,
                 'success': True
             }
         except Exception as e:
@@ -51,38 +99,17 @@ class LoginService:
         self.repository = UserRepository()
     
     def login_user(self, email, password):
-        """
-        User login qilish
-        
-        Returns:
-            dict: {
-                'success': bool,
-                'access_token': str,
-                'refresh_token': str,
-                'user_id': str,
-                'email': str,
-                'name': str
-            }
-        
-        Raises:
-            InvalidCredentialsError: Email yoki parol noto'g'ri
-        """
-        
-        # Email orqali user topish
         user = self.repository.get_by_email(email)
         
         if not user:
             raise InvalidCredentialsError("Email yoki parol noto'g'ri")
         
-        # Parolni tekshirish
         if not user.check_password(password):
             raise InvalidCredentialsError("Email yoki parol noto'g'ri")
         
-        # User aktiv emasligini tekshirish
         if not user.is_active:
             raise InvalidCredentialsError("Akkaunt o'chirilgan yoki bloklangan")
         
-        # JWT token yaratish
         refresh = RefreshToken.for_user(user)
         
         logger.info(f"User login qildi: {user.email}")
