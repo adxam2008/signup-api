@@ -4,25 +4,25 @@ from .models import User
 
 class UserRepository:
     @staticmethod
-    def email_exists(email):
-        return User.objects.filter(email__iexact=email).exists()
+    def phone_exists(phone):
+        return User.objects.filter(phone__iexact=phone).exists()
     
     @staticmethod
     def username_exists(username):
         return User.objects.filter(username__iexact=username).exists()
     
     @staticmethod
-    def get_by_email(email):
+    def get_by_phone(phone):
         try:
-            return User.objects.get(email__iexact=email)
+            return User.objects.get(phone__iexact=phone)
         except User.DoesNotExist:
             return None
     
     @staticmethod
     @transaction.atomic
-    def create_user(name, email, password, username):
+    def create_user(name, phone, password, username):
         user = User.objects.create_user(
-            email=email.lower(),
+            phone=phone,
             name=name.strip(),
             password=password,
             username=username

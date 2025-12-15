@@ -41,10 +41,10 @@ class SignupService:
         self.repository = UserRepository()
         self.validator = SignupValidator()
     
-    def register_user(self, name, email, password=None):
+    def register_user(self, name, phone):
         """
         User ro'yxatdan o'tkazish
-        Agar password berilmasa, avtomatik yaratiladi
+        Password avtomatik yaratiladi
         """
         # Username yaratish
         username = generate_username(name)
@@ -53,42 +53,39 @@ class SignupService:
         while self.repository.username_exists(username):
             username = generate_username(name)
         
-        # Agar parol berilmasa, avtomatik yaratish
-        if not password:
-            password = generate_password()
+        # Parol avtomatik yaratish
+        password = generate_password()
         
-        generated_password = password  # Response uchun saqlash
+        self._validate_input(name, phone, password)
         
-        self._validate_input(name, email, password)
-        
-        if self.repository.email_exists(email):
-            logger.warning(f"Email allaqachon mavjud: {email}")
-            raise ConflictError("Bu email allaqachon ro'yxatdan o'tgan")
+        if self.repository.phone_exists(phone):
+            logger.warning(f"Telefon raqam allaqachon mavjud: {phone}")
+            raise ConflictError("Bu telefon raqam allaqachon ro'yxatdan o'tgan")
         
         try:
             user = self.repository.create_user(
                 name=name,
-                email=email,
+                phone=phone,
                 password=password,
                 username=username
             )
             
-            logger.info(f"Yangi user yaratildi: {user.email}, login: {username}")
+            logger.info(f"Yangi user yaratildi: {user.phone}, login: {username}")
             
             return {
                 'user_id': user.user_id,
-                'email': user.email,
+                'phone': user.phone,
                 'login': username,
-                'password': generated_password,
+                'password': password,
                 'success': True
             }
         except Exception as e:
             logger.error(f"User yaratishda xatolik: {str(e)}")
             raise Exception("User yaratishda xatolik yuz berdi")
     
-    def _validate_input(self, name, email, password):
+    def _validate_input(self, name, phone, password):
         self.validator.validate_name(name)
-        self.validator.validate_email(email)
+        self.validator.validate_phone(phone)
         self.validator.validate_password(password)
 
 
@@ -98,28 +95,28 @@ class LoginService:
     def __init__(self):
         self.repository = UserRepository()
     
-    def login_user(self, email, password):
-        user = self.repository.get_by_email(email)
+    def login_user(self, phone, password):
+        user = self.repository.get_by_phone(phone)
         
         if not user:
-            raise InvalidCredentialsError("Email yoki parol noto'g'ri")
+            raise InvalidCredentialsError("Telefon raqam yoki parol noto'g'ri")
         
         if not user.check_password(password):
-            raise InvalidCredentialsError("Email yoki parol noto'g'ri")
+            raise InvalidCredentialsError("Telefon raqam yoki parol noto'g'ri")
         
         if not user.is_active:
             raise InvalidCredentialsError("Akkaunt o'chirilgan yoki bloklangan")
         
         refresh = RefreshToken.for_user(user)
         
-        logger.info(f"User login qildi: {user.email}")
+        logger.info(f"User login qildi: {user.phone}")
         
         return {
             'success': True,
             'access_token': str(refresh.access_token),
             'refresh_token': str(refresh),
             'user_id': user.user_id,
-            'email': user.email,
+            'phone': user.phone,
             'name': user.name
         }
 
@@ -129,5 +126,5 @@ class ConflictError(Exception):
 
 
 class InvalidCredentialsError(Exception):
-    """Email yoki parol noto'g'ri"""
+    """Telefon raqam yoki parol noto'g'ri"""
     pass

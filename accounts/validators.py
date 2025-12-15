@@ -1,6 +1,5 @@
 import re
 from django.core.exceptions import ValidationError
-from django.core.validators import EmailValidator
 
 
 class SignupValidator:
@@ -17,13 +16,21 @@ class SignupValidator:
         return True
     
     @staticmethod
-    def validate_email(email):
-        email_validator = EmailValidator(message="Noto'g'ri email formati")
-        try:
-            email_validator(email)
-            return True
-        except ValidationError as e:
-            raise ValidationError(str(e))
+    def validate_phone(phone):
+        """
+        Telefon raqam validatsiyasi
+        Format: +998901234567 yoki 998901234567
+        """
+        # Faqat raqamlar va + belgisini qoldirish
+        cleaned = re.sub(r'[^\d+]', '', phone)
+        
+        # Uzbekiston raqami tekshirish
+        if not re.match(r'^(\+?998)?[0-9]{9}$', cleaned):
+            raise ValidationError(
+                "Noto'g'ri telefon raqam formati. "
+                "To'g'ri format: +998901234567 yoki 998901234567"
+            )
+        return True
     
     @staticmethod
     def validate_name(name):

@@ -29,7 +29,7 @@ class SignupView(APIView):
     @extend_schema(
         request=SignupRequestSerializer,
         responses={201: SignupResponseSerializer},
-        description="Yangi user ro'yxatdan o'tkazish"
+        description="Yangi user ro'yxatdan o'tkazish (faqat ism va telefon)"
     )
     def post(self, request):
         serializer = SignupRequestSerializer(data=request.data)
@@ -47,8 +47,7 @@ class SignupView(APIView):
         try:
             result = signup_service.register_user(
                 name=serializer.validated_data['name'],
-                email=serializer.validated_data['email'],
-                password=serializer.validated_data['password']
+                phone=serializer.validated_data['phone']
             )
             
             response_serializer = SignupResponseSerializer(result)
@@ -84,7 +83,7 @@ class LoginView(APIView):
     @extend_schema(
         request=LoginRequestSerializer,
         responses={200: LoginResponseSerializer},
-        description="User tizimga kirish"
+        description="User tizimga kirish (telefon raqam bilan)"
     )
     def post(self, request):
         """User login qilish"""
@@ -103,7 +102,7 @@ class LoginView(APIView):
         
         try:
             result = login_service.login_user(
-                email=serializer.validated_data['email'],
+                phone=serializer.validated_data['phone'],
                 password=serializer.validated_data['password']
             )
             

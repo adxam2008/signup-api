@@ -5,25 +5,24 @@ import uuid
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, name, password=None, username=None, **extra_fields):
-        if not email:
-            raise ValueError('Email majburiy maydon')
-        email = self.normalize_email(email)
-        user = self.model(email=email, name=name, username=username, **extra_fields)
+    def create_user(self, phone, name, password=None, username=None, **extra_fields):
+        if not phone:
+            raise ValueError('Telefon raqam majburiy maydon')
+        user = self.model(phone=phone, name=name, username=username, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
     
-    def create_superuser(self, email, name, password=None, **extra_fields):
+    def create_superuser(self, phone, name, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        return self.create_user(email, name, password, **extra_fields)
+        return self.create_user(phone, name, password, **extra_fields)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    username = models.CharField(max_length=50, unique=True, db_index=True)  # YANGI
-    email = models.EmailField(unique=True, max_length=255, db_index=True)
+    username = models.CharField(max_length=50, unique=True, db_index=True)
+    phone = models.CharField(max_length=20, unique=True, db_index=True)  # YANGI
     name = models.CharField(max_length=150)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -32,15 +31,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     objects = UserManager()
     
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['name', 'username']  # username qo'shildi
+    USERNAME_FIELD = 'phone'  # EMAIL → PHONE
+    REQUIRED_FIELDS = ['name', 'username']
     
     class Meta:
         db_table = 'users'
         ordering = ['-date_joined']
     
     def __str__(self):
-        return self.email
+        return self.phone
     
     @property
     def user_id(self):
